@@ -1,0 +1,1661 @@
+import { ObjectId } from "npm:mongodb";
+import { AppointmentsCollection, BloodTestsCollection, DoctorsCollection, MedicationsCollection, UsersCollection } from "./db/conection.ts";
+import { Validate_Email } from "./utilities/Validations/Validate_Email.ts";
+import { Validate_Phone } from "./utilities/Validations/Validate_Phone.ts";
+import { Transform_User } from "./utilities/Users/utils_Users.ts";
+import { Transform_Doctor } from "./utilities/Users/utils_Doctors.ts";
+import { Transform_Appointment } from "./utilities/Users/utils_Appointments.ts";
+import { Short_Medication, Transform_Medication } from "./utilities/Users/utils_Medications.ts";
+import { Med_infoDB } from "./types/Users/Medication.ts";
+import { Table_user_data, Table_analysis, Table_analysis_iterable } from "./types/Users/Table.ts";
+import { BloodTest_Date, Transform_BloodTest, Transform_Table } from "./utilities/Users/utils_BloodTest.ts";
+import { BloodTest, BloodTest_iterable } from "./types/Users/BloodTest.ts";
+import { Decrypt_Passwords } from "./utilities/Transforms/Transform_Passwords.ts";
+import { Decrypt_DNI } from "./utilities/Transforms/Transform_DNI.ts";
+import { Appointment } from "./types/Users/Appointment.ts";
+import { Transform_Date } from "./utilities/Transforms/Transform_Date.ts";
+import { Validate_DNI } from "./utilities/Validations/Validate_DNI.ts";
+
+const handler = async (req: Request): Promise<Response> => {
+	const method = req.method;
+	const url = new URL(req.url);
+	const pathname = url.pathname;
+  	const searchParams = url.searchParams;
+	
+	const headers = new Headers();
+	headers.set("Access-Control-Allow-Origin", "*");
+	headers.set("Access-Control-Allow-Headers", "*");
+	headers.set("Access-Control-Allow-Methods", "GET, PUT, POST, OPTIONS");
+
+	if(method === "OPTIONS"){
+		return new Response(null,{
+    		status: 204,
+    		headers: headers,
+    	});
+	}
+	else if(method === "GET"){
+    	if(pathname === "/login"){
+			const email = searchParams.get("email");
+			const passwordCript = searchParams.get("password");
+
+			if(!email || !passwordCript){
+                return new Response(
+                    JSON.stringify({error: "Email o contraseña no encontrada"}),
+                    {
+                        status: 400,
+						headers: headers,
+                    }
+                );
+            }
+
+			const email_validation = await Validate_Email(email);
+
+            if(email_validation.status !== 200){
+                return new Response(
+                    JSON.stringify(await email_validation.json()),
+                    {
+                        status: email_validation.status,
+                        headers: headers,
+                    }
+                );
+            }
+
+			const user = await UsersCollection.findOne({email: email});
+
+			const password = Decrypt_Passwords(passwordCript.trim());
+
+			if(!user || password !== Decrypt_Passwords(user.password)){
+				return new Response(
+					JSON.stringify({error: "Email o contraseña no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			return new Response(
+				JSON.stringify({id: user._id.toString()}),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/id"){
+			const id = searchParams.get("id");
+
+			if(!id){
+                return new Response(
+                    JSON.stringify({error: "ID no encontrada"}),
+                    {
+                        status: 400,
+						headers: headers,
+                    }
+                );
+            }
+
+			const user = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user){
+				return new Response(
+					JSON.stringify({error: `Persona con id ${id} no encontrada`}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const response_user = await Transform_User(user);
+
+			if(response_user.status !== 200){
+				return new Response(
+					JSON.stringify(await response_user.json()),
+					{
+						status: response_user.status,
+						headers: headers,
+					}
+				);
+			}
+
+			return new Response(
+				JSON.stringify(await response_user.json()),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/doctors"){
+			const id = searchParams.get("id");
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const doctorsDB = await DoctorsCollection.find({_id: {$in: user_exists.doctors}}).toArray();
+
+			if(user_exists.doctors.length !== doctorsDB.length){
+				return new Response(
+					JSON.stringify({error: `${user_exists.doctors.length - doctorsDB.length} doctores no encontrados`}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			return new Response(
+				JSON.stringify(doctorsDB.map((doctor) => Transform_Doctor(doctor))),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/appointments"){
+			const id = searchParams.get("id");
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const appointmentsDB = await AppointmentsCollection.find({user: new ObjectId(id)}).toArray();
+
+			const appointments_trans = await Promise.all(appointmentsDB.map(async (appointment) => await Transform_Appointment(appointment)));
+
+			const error_ap = appointments_trans.find((response) => {
+				if(response.status !== 200){
+					return response;
+				}
+			});
+
+			if(error_ap !== undefined){
+				return new Response(
+					JSON.stringify({error: await error_ap.json()}),
+					{
+						status: error_ap.status,
+						headers: headers,
+					}
+				);
+			}
+			
+			const appointments = await Promise.all(appointments_trans.map(async(response) => await response.json()));
+
+			const appointmentsSorted: Appointment[] = appointments.sort((appointmentA: Appointment, appointmentB: Appointment) => {
+				return new Date(`${appointmentA.date}T${appointmentA.hour}Z`).getTime() - new Date(`${appointmentB.date}T${appointmentB.hour}Z`).getTime();
+			});
+
+			return new Response(
+				JSON.stringify(appointmentsSorted),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/medications"){
+			const id = searchParams.get("id");
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const medicationsDB = await MedicationsCollection.find({patient: user_exists._id}).toArray();
+
+			const medications = medicationsDB.map((medication) => Short_Medication(medication));
+
+			return new Response(
+				JSON.stringify(medications),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/medication"){
+			const id_user = searchParams.get("id_user");
+			const id_medic = searchParams.get("id_medic");
+
+			if(!id_user || !id_medic){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id_user)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const medicationDB = await MedicationsCollection.findOne({_id: new ObjectId(id_medic)});
+
+			if(!medicationDB){
+				return new Response(
+					JSON.stringify({error: "Medicación no encontrada"}),
+					{
+						status: 200,
+						headers: headers,
+					}
+				);
+			}
+			else if(medicationDB.patient.toString() !== user_exists._id.toString()){
+				return new Response(
+					JSON.stringify({error: "La medicación encontrada no pertenece al paciente encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const medication_response = await Transform_Medication(medicationDB);
+
+			return new Response(
+				JSON.stringify(await medication_response.json()),
+				{
+					status: medication_response.status,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/all_analysis"){
+			const id = searchParams.get("id");
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const analysisDB = await BloodTestsCollection.find({user: user_exists._id}).toArray();
+
+			const analysis_response = await Promise.all(analysisDB.map(async (analysis) => await Transform_BloodTest(analysis)));
+			
+			const analysis_error = analysis_response.find((analysis) => {
+				if(analysis.status !== 200){
+					return analysis;
+				}
+			});
+
+			if(analysis_error !== undefined){
+				return new Response(
+					JSON.stringify(await analysis_error.json()),
+					{
+						status: analysis_error.status,
+						headers: headers,
+					}
+				);
+			}
+
+			const all_analysis: BloodTest[] = await Promise.all(analysis_response.map(async (analysis) => await analysis.json()));
+
+			const all_analysis_transform: BloodTest_iterable[] = all_analysis.map((analysis) => {
+				return{
+					id: analysis.id,
+					user: analysis.user,
+					doctor: analysis.doctor,
+					date: analysis.date,
+					tables: analysis.tables.map((table) => Transform_Table(table)),
+				}
+			});
+
+			const allAnalysisSorted: BloodTest_iterable[] = all_analysis_transform.sort((BloodTestA: BloodTest_iterable, BloodTestB: BloodTest_iterable) => {
+				return new Date(BloodTestA.date).getTime() - new Date(BloodTestB.date).getTime();
+			});
+
+			return new Response(
+				JSON.stringify(allAnalysisSorted),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/single_analysis"){
+			const id_user = searchParams.get("id_user");
+			const id_analysis = searchParams.get("id_analysis");
+
+			if(!id_user || !id_analysis){
+				return new Response(
+					JSON.stringify({error: "Faltan datos"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id_user)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Usuario no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const analysis_exists = await BloodTestsCollection.findOne({_id: new ObjectId(id_analysis)});
+
+			if(!analysis_exists){
+				return new Response(
+					JSON.stringify({error: "Analisis no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			if(analysis_exists.user.id.toString() === user_exists._id.toString()){
+				return new Response(
+					JSON.stringify({error: "Analisis encontrado no pertenece al usuario encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const analysis_response = await Transform_BloodTest(analysis_exists);
+
+			if(analysis_response.status !== 200){
+				return new Response(
+					JSON.stringify(await analysis_response.json()),
+					{
+						status: analysis_response.status,
+						headers: headers,
+					}
+				);
+			}
+
+			const analysis = await analysis_response.json();
+
+			const tables_analysis: Table_analysis_iterable = analysis.tables.map((table: Table_analysis) => Transform_Table(table));
+
+			const analysis_transform = {
+				id: analysis.id,
+				user: analysis.user,
+				doctor: analysis.doctor,
+				date: analysis.date,
+				tables: tables_analysis,
+			}
+
+			return new Response(
+				JSON.stringify(analysis_transform),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/table_names_analysis"){
+			const id = searchParams.get("id");
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "Faltan datos"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Usuario no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const bloodTests = await BloodTestsCollection.find({user: new ObjectId(id)}).toArray();
+
+			const names: string[] = [];
+
+			bloodTests.forEach((analysis) => {
+				analysis.tables.forEach((table) => {
+					const name_exists = names.find((name) => {
+						if(name === table.table_name){
+							return name;
+						}
+					});
+
+					if(name_exists === undefined){
+						names.push(table.table_name);
+					}
+				});
+			});
+
+			return new Response(
+				JSON.stringify(names),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/table_data_names_analysis"){
+			const id = searchParams.get("id");
+			const table_name = searchParams.get("table_name");
+
+			if(!id || !table_name){
+				return new Response(
+					JSON.stringify({error: "Faltan datos"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Usuario no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const bloodTests = await BloodTestsCollection.find({user: new ObjectId(id)}).toArray();
+
+			const tables: Table_analysis[] = [];
+			bloodTests.forEach((analysis) => {
+				analysis.tables.forEach((table) => {
+					if(table.table_name === table_name){
+						tables.push(table);
+					}
+				});
+			});
+
+			const tables_transform: Table_analysis_iterable[] = tables.map((table) => Transform_Table(table));
+
+			const rows: string[] = [];
+
+			tables_transform.forEach((table) => {
+				table.data.forEach((row) => {
+					const row_exists = rows.find((row_in) => {
+						if(row[0] === row_in){
+							return row_in;
+						}
+					});
+
+					if(row_exists === undefined){
+						rows.push(row[0]);
+					}
+				});
+			});
+
+			return new Response(
+				JSON.stringify(rows),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/table_analysis"){
+			const id = searchParams.get("id");
+			const table_name = searchParams.get("table");
+
+			if(!id || !table_name){
+				return new Response(
+					JSON.stringify({error: "Faltan datos"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Usuario no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const bloodTests = await BloodTestsCollection.find({user: new ObjectId(id)}).toArray();
+
+			const tablesTests: Table_analysis[] = [];
+
+			bloodTests.forEach((test) => {
+				test.tables.forEach((table) => {
+					if(table.table_name === table_name){
+						tablesTests.push(table);
+					}
+				});
+			});
+
+			return new Response(
+				JSON.stringify(tablesTests),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/parameter_table_analysis"){
+			const id = searchParams.get("id");
+			const table_name = searchParams.get("table_name");
+			const data_name = searchParams.get("data_name");
+
+			if(!id || !table_name || !data_name){
+				return new Response(
+					JSON.stringify({error: "Faltan datos"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Usuario no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const bloodTests = await BloodTestsCollection.find({user: new ObjectId(id)}).toArray();
+
+			const tables: {
+				"date": string,
+				"table": Table_analysis
+			}[] = [];
+
+			bloodTests.forEach((test) => {
+				test.tables.forEach((table) => {
+					if(table.table_name === table_name){
+						tables.push(
+							{
+								"date": test.date,
+								"table": table
+							}
+						);
+					}
+				});
+			});
+
+			const tables_transform: {
+				"date": string,
+				"table": Table_analysis_iterable
+			}[] = [];
+			
+			tables.forEach((table) => {
+				tables_transform.push({
+					"date": table.date,
+					"table": Transform_Table(table.table),
+				});
+			});
+
+			const datas: {
+				date: string,
+				data: string[],
+			}[] = [];
+
+			tables_transform.forEach((tables) => {
+				tables.table.data.forEach((data) => {
+					if(data[0] === data_name){
+						datas.push(
+							{
+								"date": tables.date,
+								"data": data,
+							}
+						);
+					}
+				});
+			});
+
+			const info: {
+				"Prueba": string,
+				"Valores": {
+					"Fecha": string,
+					"Valor": number
+				}[],
+				"Valor_minimo"?: number | null,
+				"Valor_maximo"?: number | null,
+				"Unidades": string,
+			} = {
+				"Prueba": datas[0].data[0],
+				"Valores": [],
+				"Unidades": datas[0].data[2],
+			}
+
+			const datasSorted: {
+				date: string,
+				data: string[],
+			}[] = datas.sort((dataA, dataB) => {
+				return (new Date(Transform_Date(dataA.date)).getTime() - new Date(Transform_Date(dataB.date)).getTime());
+			});
+
+			datasSorted.forEach((data) => {
+				info.Valores.push(
+					{
+						"Valor": Number(data.data[1]),
+						"Fecha": data.date,
+					}
+				);
+			});
+
+			const valor_split1 = datas[0].data[3].split(" - ");
+			const valor_split2 = datas[0].data[3].split("< ");
+			const valor_split3 = datas[0].data[3].split("> ");
+
+			if(valor_split1.length > 1){
+				info.Valor_minimo = Number(valor_split1[0]);
+				info.Valor_maximo = Number(valor_split1[1]);
+			}
+			else if(valor_split2.length > 1){
+				info.Valor_minimo = null;
+				info.Valor_maximo = Number(valor_split2[1]);
+			}
+			else if(valor_split3.length > 1){
+				info.Valor_minimo = Number(valor_split3[1]);
+				info.Valor_maximo = null;
+			}
+			else{
+				info.Valor_minimo = null;
+				info.Valor_maximo = null;
+			}
+
+			return new Response(
+				JSON.stringify(info),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+	}
+	else if(method === "POST"){
+		if(pathname === "/user"){
+			const data = await req.json();
+			const name: string | undefined = data.name;
+			const surname_1: string | undefined = data.surname_1;
+			const surname_2: string | undefined = data.surname_2;
+			const DNI: string | undefined = data.DNI;
+			const email: string | undefined = data.email;
+			const passwordCript: string | undefined = data.password;
+			const prefix: string | undefined = data.prefix;
+			const phone: string | undefined = data.phone;
+
+			if(!name || !surname_1 || !DNI || !email || !passwordCript){
+				return new Response(
+					JSON.stringify({error: "Faltan datos para insertar una persona"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			let surname_aux: string | undefined = "";
+			if(surname_2){
+				surname_aux = surname_2;
+			}
+			else{
+				surname_aux = undefined;
+			}
+
+			const dni_data = Validate_DNI(Decrypt_DNI(DNI));
+
+			if(dni_data.status !== 200){
+				return new Response(
+					JSON.stringify(await dni_data.json()),
+					{
+						status: dni_data.status,
+						headers: headers,
+					}
+				)
+			}
+
+			const users = await UsersCollection.find().toArray();
+
+			const user_DNI = users.find((user) => {
+				if(Decrypt_DNI(DNI) === Decrypt_DNI(user.DNI)){
+					return user;
+				}
+			});
+
+			if(user_DNI !== undefined){
+				return new Response(
+					JSON.stringify({error: `Persona con DNI ${Decrypt_DNI(DNI)} ya existente`}),
+					{
+						status: 406,
+						headers: headers,
+					}
+				);
+			}
+
+			/*const users_DNI = await UsersCollection.findOne({DNI: DNI});
+
+			if(users_DNI){
+				return new Response(
+					JSON.stringify({error: `Persona con DNI ${DNI} ya existente`}),
+					{
+						status: 406,
+						headers: headers,
+					}
+				);
+			}*/
+
+			const users_email = await UsersCollection.findOne({email: email});
+
+            if(users_email){
+                return new Response(
+                    JSON.stringify({error: `Persona con email ${email} ya existente`}),
+                    {
+                        status: 406,
+						headers: headers,
+                    }
+                );
+            }
+
+			const email_validation = await Validate_Email(email);
+
+            if(email_validation.status !== 200){
+                return new Response(
+                    JSON.stringify(await email_validation.json()),
+                    {
+                        status: email_validation.status,
+						headers: headers,
+                    }
+                );
+            }
+
+            let phone_prefix: string | undefined = "";
+            let phone_number: string| undefined = "";
+
+            if(!prefix || !phone){
+                phone_prefix = undefined;
+                phone_number = undefined;
+            }
+			else{
+                const validation = await Validate_Phone(prefix, phone);
+
+                if(validation.status !== 200){
+                    return new Response(
+                        JSON.stringify(await validation.json()),
+                        {
+                            status: validation.status,
+                            headers: headers,
+                        }
+                    );
+                }
+                else{
+                    const phone_error = await UsersCollection.findOne({prefijo_movil: prefix, numero_movil: phone});
+
+                    if(phone_error){
+                        return new Response(
+                            JSON.stringify({error: `Persona con teléfono ${prefix} ${phone} ya existe`}),
+                            {
+                                status: 409,
+                                headers: headers,
+                            }
+                        );
+                    }
+
+                    phone_prefix = prefix.replaceAll(" ","+");
+                    phone_number = phone;
+                }
+            }
+
+			const { insertedId } = await UsersCollection.insertOne(
+				{
+					name: name,
+					surname_1: surname_1,
+					surname_2: surname_aux,
+					DNI: DNI,
+					email: email,
+					password: passwordCript,
+					doctors: [],
+					phone_prefix: phone_prefix,
+					phone_number: phone_number,
+				}
+			);
+
+			return new Response(
+				JSON.stringify(
+					{
+						message: "Usuario correctamente insertado",
+						id: insertedId,
+					}
+				),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/appointments"){
+			const data = await req.json();
+			const user: string | undefined = data.user;
+			const doctor: string | undefined = data.doctor;
+			const date: string | undefined = data.date;
+			const hour: string | undefined = data.hour;
+			const specialty: string | undefined = data.specialty;
+			const sector: string | undefined = data.sector;
+
+			if(!user || !doctor || !date || !hour || !specialty || !sector){
+				return new Response(
+					JSON.stringify({error: "Faltan datos de la cita"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(user)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Usuario no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const appointmentsDB = await AppointmentsCollection.find({user: new ObjectId(user)}).toArray();
+
+			const appointment = appointmentsDB.find((ap) => {
+				if(ap.date === date && ap.hour === hour){
+					return ap;
+				}
+			});
+
+			if(appointment !== undefined){
+				return new Response(
+					JSON.stringify({error: "Cita ya programada para esa fecha"}),
+					{
+						status: 406,
+						headers: headers,
+					}
+				);
+			}
+
+			const doctor_exists = await DoctorsCollection.findOne({_id: new ObjectId(doctor)});
+
+			if(!doctor_exists){
+				return new Response(
+					JSON.stringify({error: "Doctor no encontrado"}),
+					{
+						status: 404,
+						headers: headers
+					}
+				);
+			}
+
+			const { insertedId } = await AppointmentsCollection.insertOne(
+				{
+					user: new ObjectId(user),
+					doctor: new ObjectId(doctor),
+					date: date,
+					hour: hour,
+					specialty: specialty,
+					sector: sector,
+				}
+			);
+
+			return new Response(
+				JSON.stringify(
+					{
+						message: "Cita exitosamente insertada",
+					}
+				),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/doctor"){
+			const data = await req.json();
+			const id_user: string | undefined = data.id_user;
+			const name: string | undefined = data.name;
+			const surname_1: string | undefined = data.surname_1;
+			const surname_2: string | undefined = data.surname_2;
+			const specialty: string | undefined = data.specialty;
+			const sector: string | undefined = data.sector;
+			const hospital: string | undefined = data.hospital;
+    		const ubication: string | undefined = data.ubication;
+			const prefix: string | undefined = data.prefix;
+			const phone: string | undefined= data.phone;
+
+			if(!name || !surname_1 || !specialty || !sector || !id_user){
+				return new Response(
+					JSON.stringify({error: "Faltan datos para insertar a un doctor"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+			
+			let surname2: string | undefined = "";
+			if(surname_2){
+				surname2 = surname_2;
+			}
+			else{
+				surname2 = undefined;
+			}
+
+			let prefijo: string | undefined = "";
+			let numero: string | undefined = "";
+
+			if(!prefix || !phone){
+				prefijo = undefined;
+				numero = undefined;
+			}
+			else{
+                const validation = await Validate_Phone(prefix, phone);
+
+                if(validation.status !== 200){
+                    return new Response(
+                        JSON.stringify(await validation.json()),
+                        {
+                            status: validation.status,
+                            headers: headers,
+                        }
+                    );
+                }
+                else{
+                    const phone_error = await UsersCollection.findOne({prefijo_movil: prefix, numero_movil: phone});
+
+                    if(phone_error){
+                        return new Response(
+                            JSON.stringify({error: `Persona con teléfono ${prefix} ${phone} ya existe`}),
+                            {
+                                status: 409,
+                                headers: headers,
+                            }
+                        );
+                    }
+
+                    prefijo = prefix.replaceAll(" ","+");
+                    numero = phone;
+                }
+            }
+
+			let centro: string | undefined = "";
+			if(hospital){
+				centro = hospital;
+			}
+			else{
+				centro = undefined;
+			}
+
+			let ubicacion: string | undefined = "";
+			if(ubication){
+				ubicacion = ubication;
+			}
+			else{
+				ubicacion = undefined;
+			}
+
+			const { insertedId } = await DoctorsCollection.insertOne(
+				{
+					name: name,
+					surname_1: surname_1,
+					surname_2: surname2,
+					specialty: specialty,
+					sector: sector,
+					hospital: centro,
+					ubication: ubicacion,
+					prefix: prefijo,
+					phone: numero,
+				}
+			);
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id_user)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const doctors = user_exists.doctors;
+
+			doctors.push(insertedId);
+
+			const { modifiedCount } = await UsersCollection.updateOne(
+				{_id: new ObjectId(id_user)},
+				{
+					$set: {
+						doctors: doctors,
+					}
+				}
+			);
+
+			if(modifiedCount === 0){
+				return new Response(
+					JSON.stringify({error: "Persona no actualizada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			return new Response(
+				JSON.stringify(
+					{
+						message: "Doctor exitosamente insertado",
+					}
+				),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/new_medication"){
+			const data = await req.json();
+			const id: string | undefined = data.id;
+			const name: string | undefined = data.name;
+			const type: string | undefined = data.type;
+			const doctor: string | undefined = data.doctor;
+			const init_date: string | undefined = data.init_date;
+			const days_duration: number | undefined = data.days_duration;
+			const amount_times_day: number | undefined = data.amount_times_day;
+			const ml_time: number | undefined = data.ml_time;
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			if(!name || !type || !doctor || !init_date || !days_duration || !amount_times_day){
+				return new Response(
+					JSON.stringify({error: "Falta algún dato"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const { insertedId } = await MedicationsCollection.insertOne(
+				{
+					name: name,
+					patient: user_exists._id,
+					type: type,
+					info: [],
+				}
+			);
+
+			const doctor_exists = await DoctorsCollection.findOne({_id: new ObjectId(doctor)});
+
+			if(!doctor_exists){
+				return new Response(
+					JSON.stringify({error: "Doctor no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const info_object: Med_infoDB = {
+				doctor: new ObjectId(doctor),
+				init_date: init_date,
+				days_duration: days_duration,
+				amount_times_day: amount_times_day,
+			}
+
+			if(ml_time){
+				info_object.ml_time = ml_time;
+			}
+
+			const med_exists = await MedicationsCollection.findOne({_id: insertedId});
+
+			if(!med_exists){
+				return new Response(
+					JSON.stringify({error: "Medicamento no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			med_exists.info.push(info_object);
+
+			const { modifiedCount } = await MedicationsCollection.updateOne(
+				{_id: med_exists._id},
+				{$set: {
+					info: med_exists.info,
+				}}
+			);
+
+			if(modifiedCount === 0){
+				return new Response(
+					JSON.stringify({error: "No se ha podido actualizar la lista de medicamentos"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			return new Response(
+				JSON.stringify({message: "Medicamento insertado exitosamente"}),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/medication"){
+			const data = await req.json();
+			const id_user: string | undefined = data.id_user;
+			const id_medicine: string | undefined = data.id_medicine;
+			const doctor: string | undefined = data.doctor;
+			const init_date: string | undefined = data.init_date;
+			const days_duration: number | undefined = data.days_duration;
+			const amount_times_day: number | undefined = data.amount_times_day;
+			const ml_time: number | undefined = data.ml_time;
+
+			if(!id_user || !id_medicine){
+				return new Response(
+					JSON.stringify({error: "IDs no encontrados"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const user_exists = await UsersCollection.findOne({_id: new ObjectId(id_user)});
+
+			if(!user_exists){
+				return new Response(
+					JSON.stringify({error: "Persona no encontrada"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const medicine_exists = await MedicationsCollection.findOne({_id: new ObjectId(id_medicine), patient: new ObjectId(id_user)});
+
+			if(!medicine_exists){
+				return new Response(
+					JSON.stringify({error: "Medicamento no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			if(!doctor || !init_date || !days_duration || !amount_times_day){
+				return new Response(
+					JSON.stringify({error: "Falta algún dato"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const doctor_exists = await DoctorsCollection.findOne({_id: new ObjectId(doctor)});
+
+			if(!doctor_exists){
+				return new Response(
+					JSON.stringify({error: "Doctor no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const info_object: Med_infoDB = {
+				doctor: new ObjectId(doctor),
+				init_date: init_date,
+				days_duration: days_duration,
+				amount_times_day: amount_times_day,
+			}
+
+			if(ml_time){
+				info_object.ml_time = ml_time;
+			}
+
+			medicine_exists.info.push(info_object);
+
+			const { modifiedCount } = await MedicationsCollection.updateOne(
+				{_id: medicine_exists._id},
+				{$set: {
+					info: medicine_exists.info,
+				}}
+			);
+
+			if(modifiedCount === 0){
+				return new Response(
+					JSON.stringify({error: "No se ha podido actualizar la lista de medicamentos"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			return new Response(
+				JSON.stringify({message: "Medicamento insertado exitosamente"}),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+		else if(pathname === "/user/analysis"){
+			const data = await req.json();
+			const doctor: string | undefined = data.doctor;
+			const tables: (Table_user_data | Table_analysis)[] | undefined = data.tables;
+			const DNI: string | undefined = data.DNI;
+
+			if(!tables || !DNI || !doctor){
+				return new Response(
+					JSON.stringify({error: "Falta algún dato"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			const users = await UsersCollection.find().toArray();
+
+			const user_exists = users.find((user) => {
+				if(Decrypt_DNI(user.DNI) === Decrypt_DNI(DNI)){
+					return user;
+				}
+			});
+
+			if(user_exists === undefined){
+				JSON.stringify({error: "Paciente no encontrado"}),
+				{
+					status: 404,
+					headers: headers,
+				}
+			}
+
+			const user_data = tables.find((table) => {
+				if(table.type === "User_data"){
+					return table;
+				}
+			});
+
+			if(user_data === undefined || user_data.type === "Analysis"){
+				return new Response(
+					JSON.stringify({error: "No se han encontrado los datos personales"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			if(Decrypt_DNI(user_data.dni) !== Decrypt_DNI(DNI)){
+				return new Response(
+					JSON.stringify({error: "El DNI del usuario y el de la analítica no coincide"}),
+					{
+						status: 406,
+						headers: headers,
+					}
+				);
+			}
+
+			let name_aux = user_exists!.name + " " + user_exists!.surname_1;
+			if(user_exists!.surname_2 !== null && user_exists!.surname_2 !== undefined && user_exists!.surname_2.trim() !== ""){
+				name_aux += user_exists!.surname_2;
+			}
+
+			if(user_data.nombre_completo !== name_aux){
+				return new Response(
+					JSON.stringify({error: "El nombre del usuario y el de la analítica no coincide"}),
+					{
+						status: 406,
+						headers: headers,
+					}
+				);
+			}
+
+			const doctor_exists = await DoctorsCollection.findOne({_id: new ObjectId(doctor)});
+			
+			if(!doctor_exists){
+				return new Response(
+					JSON.stringify({error: "Doctor no encontrado"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const today_date = new Date();
+			const analysis_date_transform = BloodTest_Date(user_data.fecha);
+			const analysis_date = new Date(analysis_date_transform);
+
+			if(today_date < analysis_date){
+				return new Response(
+					JSON.stringify({error: "La fecha de la analítica es superior a la de hoy"}),
+					{
+						status: 404,
+						headers: headers,
+					}
+				);
+			}
+
+			const tables_analysis: Table_analysis[] = [];
+			tables.forEach((table) => {
+				if(table.type === "Analysis"){
+					tables_analysis.push(table);
+				}
+			});
+
+			const { insertedId } = await BloodTestsCollection.insertOne(
+				{
+					user: user_exists!._id,
+					doctor: doctor_exists!._id,
+					date: user_data.fecha,
+					tables: tables_analysis,
+				}
+			);
+
+			return new Response(
+				JSON.stringify({message: "Análisis existosamente insertado"}),
+				{
+					status: 200,
+					headers: headers,
+				}
+			);
+		}
+	}
+	else if(method === "PUT"){
+		if(pathname === "/user"){
+			const data = await req.json();
+			const id: string | undefined = data.id;
+			const name: string | undefined = data.name;
+			const surname_1: string | undefined = data.surname_1;
+			const surname_2: string | undefined = data.surname_2;
+			const passwordCript: string | undefined = data.password;
+			const prefix: string | undefined = data.phone_prefix;
+			const phone: string | undefined = data.phone_number;
+
+			if(!id){
+				return new Response(
+					JSON.stringify({error: "ID no encontrado"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+
+			if(!name && !surname_1 && !surname_2 && !prefix && !phone){
+				return new Response(
+					JSON.stringify({error: "Faltan datos para actualizar"}),
+					{
+						status: 400,
+						headers: headers,
+					}
+				);
+			}
+            
+			if(prefix && phone){
+                const data = await Validate_Phone(prefix, phone);
+
+                if(data.status !== 200){
+                    return new Response(
+                        JSON.stringify(await data.json()),
+                        {
+                            status: data.status,
+							headers: headers,
+                        }
+                    );
+                }
+				else{
+					const phone_error = await UsersCollection.findOne({phone_prefix: prefix, phone_number: phone});
+
+					if(phone_error && phone_error._id.toString() !== id){
+						return new Response(
+							JSON.stringify({error: `Teléfono ${prefix} ${phone} pertenece a otra persona`}),
+							{
+								status: 409,
+								headers: headers,
+							}
+						);
+					}
+				}
+            }
+
+			if(passwordCript === undefined){
+				const user = await UsersCollection.findOne({_id: new ObjectId(id)});
+
+				if(!user){
+					return new Response(
+						JSON.stringify({error: "Usuario no encontrado"}),
+						{
+							status: 404,
+							headers: headers,
+						}
+					);
+				}
+
+				const pass = user.password;
+
+				const { modifiedCount } = await UsersCollection.updateOne(
+					{_id: new ObjectId(id)},
+					{$set:
+						{
+							name: name,
+							surname_1: surname_1,
+							surname_2: surname_2,
+							password: pass,
+							phone_prefix: prefix,
+							phone_number: phone,
+						}
+					}
+				);
+
+				if(modifiedCount === 0){
+					return new Response(
+						JSON.stringify({error: `Los datos del usuario eran los mismos que se intentaban actualizar`}),
+						{
+							status: 404,
+							headers: headers,
+						}
+					);
+				}
+
+				return new Response(
+					JSON.stringify({message: "Usuario exitosamente modificado"}),
+					{
+						status: 200,
+						headers: headers,
+					}
+				);
+			}
+
+			const { modifiedCount } = await UsersCollection.updateOne(
+                {_id: new ObjectId(id)},
+                {$set:
+                    {
+                        name: name,
+                        surname_1: surname_1,
+                        surname_2: surname_2,
+						password: passwordCript,
+                        phone_prefix: prefix,
+                        phone_number: phone,
+                    }
+                }
+            );
+
+            if(modifiedCount === 0){
+                return new Response(
+                    JSON.stringify({error: `Usuario no encontrado`}),
+                    {
+                        status: 404,
+						headers: headers,
+                    }
+                );
+            }
+
+            return new Response(
+                JSON.stringify({message: "Usuario exitosamente modificado"}),
+                {
+                    status: 200,
+					headers: headers,
+                }
+            );
+		}
+	}
+
+	return new Response(
+		"Path not found",
+		{
+			status: 404,
+			headers: headers,
+		}
+	);
+};
+
+Deno.serve(
+	{
+		port: Number(Deno.env.get("PORT")) || 4000,
+		hostname: "0.0.0.0",
+	},
+	handler
+);

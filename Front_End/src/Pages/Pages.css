@@ -1,0 +1,270 @@
+.messageLength0{
+    place-items: center;
+}
+
+.userContainer{
+    place-items: center;
+    margin-top: 3%;
+}
+
+.userContainerBloodTest{
+    place-items: center;
+    margin-top: 0.55%;
+}
+
+.userPage{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 11%;
+    border: 1px solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 150dvh;
+    h1, h2{
+        text-align: center;
+    }
+    h3{
+        text-align: center;
+        height: 50px;
+    }
+    .rows{
+        display: flex;
+        flex-direction: row;
+    }
+    .display{
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    }
+    .columns{
+        display: flex;
+        flex-direction: column;
+        padding-left: 5%;
+        padding-right: 5%;
+        padding-bottom: 2%;
+    }
+    .logout{
+        display: flex;
+        flex-direction: column;
+        margin-top: 1%;
+        margin-left: auto;
+        margin-right: auto;
+        width: 50%;
+    }
+}
+
+.medicinePage{
+    h1{
+        text-align: center;
+    }
+    .content{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .content_button{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1%;
+    }
+    .buttons{
+        display: flex;
+        flex-direction: row;
+        padding: 2%;
+        button{
+            margin: 2%;
+        }
+    }
+}
+
+.bloodTestPage{
+    h1{
+        text-align: center;
+    }
+    .content{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .content_button{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1%;
+    }
+    .buttons{
+        display: flex;
+        flex-direction: row;
+        padding: 2%;
+        button{
+            margin: 2%;
+        }
+    }
+}
+
+.showDoctorsMenu, .showAppointmentsMenu, .showMedicinesMenu, .showAnalysisMenu{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 20%;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.userTablesContainer{
+    place-items: center;
+    margin-top: 20%;
+}
+
+.showTablesMenu{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 25%;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.showGraphic{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 7%;
+    h1, h2, h3{
+        text-align: center;
+    }
+    .graphic{
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 2%;
+    }
+}
+
+.column{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2%;
+    label{
+        margin: 1%;
+    }
+    select{
+        margin: 1%;
+    }
+    input{
+        margin: 1%;
+    }
+}
+
+.buttons{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 2%;
+    button{
+        margin-bottom: 2%;
+        margin-left: 2%;
+        margin-right: 2%;
+    }
+}
+
+.bloodTestButtons{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 1%;
+}
+
+.grid_doctors1, .grid_appointments1, .grid_medicines1, .grid_info1, .grid_analysis1{
+    display: grid;
+    grid-template-columns: 1fr;
+    place-items: center;
+    .cards{
+        border: 1px black solid;
+        background-color: #f8fafc;
+        width: 22%;
+        text-align: center;
+        margin: 2%;
+    }
+    button{
+        margin-bottom: 4%;
+    }
+}
+
+.grid_doctors2, .grid_appointments2, .grid_medicines2, .grid_info2, .grid_analysis2{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    place-items: center;
+    .cards{
+        border: 1px black solid;
+        background-color: #f8fafc;
+        width: 50%;
+        text-align: center;
+        margin: 2%;
+    }
+    button{
+        margin-bottom: 4%;
+    }
+}
+
+.grid_doctors3, .grid_appointments3, .grid_medicines3, .grid_info3, .grid_analysis3{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    place-items: center;    
+    .cards{
+        border: 1px black solid;
+        background-color: #f8fafc;
+        width: 50%;
+        text-align: center;
+        margin: 2%;
+    }
+    button{
+        margin-bottom: 4%;
+    }
+}
+
+table{
+    border-collapse: collapse;
+    background-color: #f8fafc;
+    tr{
+        border: 1px solid;
+    }
+    th{
+        border: 1px solid;
+    }
+    td{
+        border: 1px solid;
+        text-align: center;
+        width: 250px;
+    }
+}
+
+.userInfo{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 30dvh;
+    margin-left: auto;
+    margin-right: auto;
+    .divButton{
+        margin-top: 5dvh;
+    }
+    h1{
+        width: 45%;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    h2{
+        width: 45%;
+        text-align: justify;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}

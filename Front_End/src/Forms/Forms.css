@@ -1,0 +1,217 @@
+.login{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 25dvh;
+    place-items: center;
+}
+
+.loginForm{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 45dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.register{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 5dvh;
+    place-items: center;
+}
+
+.registerForm{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 50dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.uptUser{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10dvh;
+    place-items: center;
+}
+
+.addAppointment{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20dvh;
+    place-items: center;
+}
+
+.addDoctor1{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 17.5dvh;
+    place-items: center;
+}
+
+.addDoctor2{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20dvh;
+    place-items: center;
+}
+
+.updateUserForm{
+    border: 1px black solid;
+    border-radius: 3%;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 60dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.addDoctorForm{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 50dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.addAppointmentForm{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 50dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.addMedicine{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 17dvh;
+    place-items: center;
+}
+
+.addMedicineJarabe{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 7dvh;
+    place-items: center;
+}
+
+.addMedicinePastillas{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 13dvh;
+    place-items: center;
+}
+
+.addMidMedicine{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 37dvh;
+    place-items: center;
+}
+
+.addMidMedicineForm{
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 75dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.addMedicineForm{
+    border: 1px black solid;
+    border-radius: 6%;
+    background-color: #f8fafc;
+    padding: 1%;
+    width: 55dvh;
+    h1, h2, h3{
+        text-align: center;
+    }
+}
+
+.column{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2%;
+    label{
+        margin: 1%;
+    }
+    select{
+        margin: 1%;
+    }
+    input{
+        margin: 1%;
+    }
+}
+
+.columns_document{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 1%;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2%;
+    border: 1px black solid;
+    border-radius: 5dvh;
+    background-color: #f8fafc;
+}
+
+.document{
+    margin-left: 53dvh;
+    embed{
+        width: 75dvh;
+        height: 60dvh;
+    }
+}
+
+.combo_data{
+    display: flex;
+    flex-direction: row;
+    input{
+        width: 100%;
+    }
+    select{
+        width: fit-content;
+    }
+}
+
+.buttons{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 2%;
+    button{
+        margin-bottom: 2%;
+        margin-left: 2%;
+        margin-right: 2%;
+    }
+}
+
+.error{
+    text-align: center;
+    color: red;
+}
+
+.message{
+    text-align: center;
+    color: green;
+}

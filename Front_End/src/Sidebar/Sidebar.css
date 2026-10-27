@@ -1,0 +1,14 @@
+.sidebar{
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    padding: 10%;
+    margin-right: 1%;
+    border-right: 1px solid;
+    background-color:#d8c3a5;
+}
+
+.totalPage{
+    display: grid;
+    grid-template-columns: 1fr 7fr
+}
