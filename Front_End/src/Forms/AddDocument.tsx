@@ -23,7 +23,7 @@ function AddDocument() {
         const getData = async () => {
             const auth_cookie = Cookie.get("auth_ECE_II");
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -38,7 +38,7 @@ function AddDocument() {
             const data = await response_user.json();
             setDNI(data.DNI!);
 
-            const url_doctors = `https://ece-ii-back-end.onrender.com/user/doctors?id=${auth_cookie}`;
+            const url_doctors = `https://ece-ii-back-end-api-rest.onrender.com/user/doctors?id=${auth_cookie}`;
             const response_doctors = await fetch(url_doctors, {
                 method: "GET",
             });
@@ -100,7 +100,7 @@ function AddDocument() {
         }
 
         if(error_data === false){
-            const url = `https://ece-ii-back-end-fast-api.onrender.com/read_document`;
+            const url = `https://ece-ii-back-end-fast-api-veha.onrender.com/read_document`;
             const response = await fetch(url,
                 {
                     method: "POST",
@@ -145,7 +145,7 @@ function AddDocument() {
                         "file": fileData,
                     }
 
-                    const url_tables = `https://ece-ii-back-end.onrender.com/user/analysis`;
+                    const url_tables = `https://ece-ii-back-end-api-rest.onrender.com/user/analysis`;
                     
                     const response_tables = await fetch(url_tables, {
                         method: "POST",

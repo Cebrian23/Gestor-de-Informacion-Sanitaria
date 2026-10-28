@@ -37,7 +37,7 @@ function UpdateUser() {
                 globalThis.location.href = "/login";
             }
 
-            const url = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response = await fetch(url, {
                 method: "GET",
             });
@@ -188,7 +188,7 @@ function UpdateUser() {
         }
         
         if(error_exists === false){
-            const URL = `https://ece-ii-back-end.onrender.com/user`;
+            const URL = `https://ece-ii-back-end-api-rest.onrender.com/user`;
             const body: User_upt = {
                 id: auth,
                 name: nombre.trim(),

@@ -10,7 +10,7 @@ function UserInfo() {
         const getData = async () => {
             const auth_cookie = Cookie.get("auth_ECE_II");
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });

@@ -34,7 +34,7 @@ function AddMedicine(){
                 globalThis.location.href = "/login";
             }
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -48,7 +48,7 @@ function AddMedicine(){
 
             setUser(auth_cookie!);
 
-            const url_medications = `https://ece-ii-back-end.onrender.com/user/medications?id=${auth_cookie}`;
+            const url_medications = `https://ece-ii-back-end-api-rest.onrender.com/user/medications?id=${auth_cookie}`;
             const response_medications = await fetch(url_medications,
                 {
                     method: "GET",
@@ -67,7 +67,7 @@ function AddMedicine(){
             }
             setMedicines(data_medications);
 
-            const url_doctors = `https://ece-ii-back-end.onrender.com/user/doctors?id=${auth_cookie}`;
+            const url_doctors = `https://ece-ii-back-end-api-rest.onrender.com/user/doctors?id=${auth_cookie}`;
             const response_doctors = await fetch(url_doctors, {
                 method: "GET",
             });
@@ -203,7 +203,7 @@ function AddMedicine(){
                 body.ml_time = mlMed;
             }
 
-            const url = `https://ece-ii-back-end.onrender.com/user/medication`;
+            const url = `https://ece-ii-back-end-api-rest.onrender.com/user/medication`;
             const response = await fetch(url, {
                 method: "POST",
                 body: JSON.stringify(body),

@@ -19,7 +19,7 @@ function ShowMedicines(){
                 globalThis.location.href = "/login";
             }
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -31,7 +31,7 @@ function ShowMedicines(){
                 globalThis.location.href = "/login";
             }
 
-            const url_medicine = `https://ece-ii-back-end.onrender.com/user/medications?id=${auth_cookie}`;
+            const url_medicine = `https://ece-ii-back-end-api-rest.onrender.com/user/medications?id=${auth_cookie}`;
             const response_medicine = await fetch(url_medicine, {
                 method: "GET",
             });

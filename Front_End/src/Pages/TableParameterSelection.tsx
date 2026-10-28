@@ -17,7 +17,7 @@ function TableParameterSelection() {
                 globalThis.location.href = "/login";
             }
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -35,7 +35,7 @@ function TableParameterSelection() {
                 globalThis.location.href = "/userPage";
             }
 
-            const url_names = `https://ece-ii-back-end.onrender.com/user/table_data_names_analysis?id=${auth_cookie}&table_name=${ECE_table}`;
+            const url_names = `https://ece-ii-back-end-api-rest.onrender.com/user/table_data_names_analysis?id=${auth_cookie}&table_name=${ECE_table}`;
             const response_names = await fetch(url_names, {
                 method: "GET",
             });

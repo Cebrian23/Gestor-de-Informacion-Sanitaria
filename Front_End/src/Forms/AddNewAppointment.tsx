@@ -29,7 +29,7 @@ function AddAppointment() {
                 globalThis.location.href = "/login";
             }
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -41,7 +41,7 @@ function AddAppointment() {
                 globalThis.location.href = "/login";
             }
 
-            const url_doctors = `https://ece-ii-back-end.onrender.com/user/doctors?id=${auth_cookie}`;
+            const url_doctors = `https://ece-ii-back-end-api-rest.onrender.com/user/doctors?id=${auth_cookie}`;
             const response_doctors = await fetch(url_doctors, {
                 method: "GET",
             });
@@ -188,7 +188,7 @@ function AddAppointment() {
                     sector: doc_info.sector,
                 }
 
-                const url = `https://ece-ii-back-end.onrender.com/user/appointments`;
+                const url = `https://ece-ii-back-end-api-rest.onrender.com/user/appointments`;
                 const response = await fetch(url, {
                     method: "POST",
                     body: JSON.stringify(body),

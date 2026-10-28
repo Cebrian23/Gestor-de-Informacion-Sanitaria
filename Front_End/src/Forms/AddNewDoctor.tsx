@@ -35,7 +35,7 @@ function AddNewDoctor() {
                 globalThis.location.href = "/login";
             }
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -125,7 +125,7 @@ function AddNewDoctor() {
                 body.hospital = hospital;
             }
 
-            const url = "https://ece-ii-back-end.onrender.com/user/doctor";
+            const url = "https://ece-ii-back-end-api-rest.onrender.com/user/doctor";
             const response = await fetch(url, {
                 method: "POST",
                 body: JSON.stringify(body),

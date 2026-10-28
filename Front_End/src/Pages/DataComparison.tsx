@@ -34,7 +34,7 @@ function DataComparison() {
                 globalThis.location.href = "/login";
             }
 
-            const url_user = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url_user = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response_user = await fetch(url_user, {
                 method: "GET",
             });
@@ -58,7 +58,7 @@ function DataComparison() {
                 globalThis.location.href = "/userPage";
             }
 
-            const url_valores = `https://ece-ii-back-end.onrender.com/user/parameter_table_analysis?id=${auth_cookie}&table_name=${ECE_table}&data_name=${ECE_row}`;
+            const url_valores = `https://ece-ii-back-end-api-rest.onrender.com/user/parameter_table_analysis?id=${auth_cookie}&table_name=${ECE_table}&data_name=${ECE_row}`;
             const response_valores = await fetch(url_valores, {
                 method: "GET",
             });

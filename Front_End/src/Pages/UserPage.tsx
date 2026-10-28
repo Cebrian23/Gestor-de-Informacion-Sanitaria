@@ -19,7 +19,7 @@ function UserPage() {
                 globalThis.location.href = "/login";
             }
             
-            const url = `https://ece-ii-back-end.onrender.com/user/id?id=${auth_cookie}`;
+            const url = `https://ece-ii-back-end-api-rest.onrender.com/user/id?id=${auth_cookie}`;
             const response = await fetch(url, {
                 method: "GET",
             });

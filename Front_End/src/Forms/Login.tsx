@@ -77,7 +77,7 @@ function Login() {
         }
 
         if(error_exists === false){
-            const URL = `https://ece-ii-back-end.onrender.com/login?email=${email}&password=${password_cript}`;
+            const URL = `https://ece-ii-back-end-api-rest.onrender.com/login?email=${email}&password=${password_cript}`;
             const response = await fetch(URL, {
                 method: "GET",
             });

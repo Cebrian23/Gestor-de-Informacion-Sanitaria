@@ -189,7 +189,7 @@ function Register() {
         }
 
         if(error_exists === false){
-            const URL = `https://ece-ii-back-end.onrender.com/user`;
+            const URL = `https://ece-ii-back-end-api-rest.onrender.com/user`;
 
             const body = {
                 name: nombre.trim(),
