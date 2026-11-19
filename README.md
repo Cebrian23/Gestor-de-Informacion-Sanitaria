@@ -1,4 +1,4 @@
-# Gestor de Información Sanitaria Personal
+# ECE II: Gestor de Información Sanitaria Personal
 
 Aplicación full stack para que una persona gestione información sanitaria personal: perfil, profesionales, citas, medicación y analíticas. La solución está formada por una SPA React, una API HTTP principal en TypeScript/Deno y un servicio FastAPI especializado en extraer tablas de documentos PDF.
 
@@ -17,6 +17,7 @@ Aplicación full stack para que una persona gestione información sanitaria pers
   - [API FastAPI](#api-fastapi)
 - [Estructura de proyectos](#estructura-de-proyectos)
 - [Despliegue](#despliegue)
+- [Autoría](#autoría)
 
 ## Resumen
 
@@ -281,3 +282,8 @@ A través de los siguientes enlaces se puede acceder tanto al frontend como al A
 - `Front_End`: https://ece-ii-front-end-afcp.onrender.com
 - `API_Rest`: https://ece-ii-back-end-api-rest.onrender.com
 - `Fast_API`: https://ece-ii-back-end-fast-api-veha.onrender.com
+
+## Autoría
+Proyecto desarrollado como parte de la asignatura de Evaluación de las Capacidades en la Empresa II (ECE II) - Universidad de Nebrija 2025-2026.
+
+Copyright (c) 2026 Miguel Ángel Cebrián.
